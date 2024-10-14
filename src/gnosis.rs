@@ -195,7 +195,7 @@ where
             code: None,
         },
         storage: Default::default(),
-        status: AccountStatus::Touched,
+        status: AccountStatus::Loaded,
     };
         state.insert(SYSTEM_ADDRESS, account);
 

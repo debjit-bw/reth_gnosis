@@ -187,15 +187,17 @@ where
 
     // Clean-up post system tx context
     // Populate system account on first block
+
+    let system_account = state.get(&SYSTEM_ADDRESS).unwrap().to_owned();
     let account = Account {
         info: AccountInfo {
-            balance: U256::from(0),
+            balance: U256::from(1),
             nonce: 0,
             code_hash: Default::default(),
             code: None,
         },
         storage: Default::default(),
-        status: AccountStatus::Loaded,
+        status: system_account.status,
     };
         state.insert(SYSTEM_ADDRESS, account);
 

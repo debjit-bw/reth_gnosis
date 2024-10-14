@@ -185,29 +185,19 @@ where
         })
     })?;
 
-    // figure out if we should create the system account
-    let mut should_create = false;
-    if let Some(system_account) = state.get(&SYSTEM_ADDRESS) {
-        if system_account.status == (AccountStatus::Touched | AccountStatus::LoadedAsNotExisting) {
-            should_create = true;
-        }
-    } else {
-        should_create = true;
-    }
-
     // Clean-up post system tx context
-    if should_create {
-        // Populate system account on first block
-        let account = Account {
-            info: AccountInfo::default(),
-            storage: Default::default(),
-            status: AccountStatus::Touched | AccountStatus::Created,
-        };
+    // Populate system account on first block
+    let account = Account {
+        info: AccountInfo {
+            balance: U256::from(0),
+            nonce: 0,
+            code_hash: Default::default(),
+            code: None,
+        },
+        storage: Default::default(),
+        status: AccountStatus::Touched,
+    };
         state.insert(SYSTEM_ADDRESS, account);
-    } else {
-        // Conditionally clear the system address account to prevent being removed
-        state.remove(&SYSTEM_ADDRESS);
-    }
 
     state.remove(&evm.block().coinbase);
     evm.context.evm.db.commit(state);

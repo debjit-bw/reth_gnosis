@@ -201,6 +201,8 @@ where
     // };
     // state.insert(SYSTEM_ADDRESS, account);
 
+    state.remove(&SYSTEM_ADDRESS);
+
     state.remove(&evm.block().coinbase);
     evm.context.evm.db.commit(state);
     // re-set the previous env

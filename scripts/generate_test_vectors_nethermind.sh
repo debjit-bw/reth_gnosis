@@ -25,4 +25,3 @@ cleanup() {
 trap cleanup EXIT
 
 $DIR/generate_test_vectors.sh
-

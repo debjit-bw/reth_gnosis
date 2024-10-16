@@ -15,7 +15,6 @@ DIR="$(dirname "$0")"
 OUT_DIR=$DIR/blocks
 mkdir -p $OUT_DIR
 
-
 # Retry the curl command until it succeeds
 until curl -X POST -H "Content-Type: application/json" \
   --data '{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["0x0", false],"id":1}' \
@@ -24,14 +23,29 @@ until curl -X POST -H "Content-Type: application/json" \
     sleep 2
 done
 
+echo "Nethermind is available"
+
 BLOCK_COUNTER=0
 
 function make_block() {
+
+  # increment block counter
   ((BLOCK_COUNTER++))
 
+  echo "Making block $BLOCK_COUNTER"
+
   HEAD_BLOCK=$(curl -X POST -H "Content-Type: application/json" \
-    --data '{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["latest", false],"id":1}' \
-    http://localhost:8545)
+    --data "{
+      \"jsonrpc\":\"2.0\",
+      \"method\":\"eth_getBlockByNumber\",
+      \"params\":[
+        \"latest\",
+        false
+      ],
+      \"id\":1
+    }" \
+    http://localhost:8545 \
+  )
 
   # --raw-output remove the double quotes
   HEAD_BLOCK_HASH=$(echo $HEAD_BLOCK | jq --raw-output '.result.hash')
@@ -103,7 +117,6 @@ function make_block() {
   echo $BLOCK | jq '.' > $OUT_DIR/block_$BLOCK_NUMBER_HEX.json
 
   # send the new block as payload
-  
   RESPONSE=$(curl -X POST -H "Content-Type: application/json" \
     -H "Authorization: Bearer $JWT_TOKEN" \
     --data "{
@@ -139,13 +152,13 @@ function make_block() {
     http://localhost:8546 \
   )
   echo engine_forkchoiceUpdatedV1 set new block as head RESPONSE $RESPONSE
-
 }
 
 # Number of times to call make_block
 N=5
 
 for ((i = 1; i <= N; i++)); do
+  echo "Making block $i"
   make_block
 done
 

@@ -25,12 +25,12 @@ done
 
 echo "Nethermind is available"
 
-declare -i BLOCK_COUNTER=0
+BLOCK_COUNTER=0
 
 function make_block() {
 
   # increment block counter
-  BLOCK_COUNTER=$((BLOCK_COUNTER + 1))
+  ((BLOCK_COUNTER + 1))
 
   echo "Making block $BLOCK_COUNTER"
 

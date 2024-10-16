@@ -50,6 +50,9 @@ pub enum Error {
     /// An error occurred while decoding RLP.
     #[error("an error occurred deserializing RLP: {0}")]
     RlpDecode(#[from] alloy_rlp::Error),
+    /// Custom error message
+    #[error("{0}")]
+    Custom(String),
 }
 
 /// The result of running a test.

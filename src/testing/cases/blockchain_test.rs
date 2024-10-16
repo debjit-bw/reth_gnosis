@@ -1,17 +1,21 @@
 //! Test runners for `BlockchainTests` in <https://github.com/ethereum/tests>
 
-use crate::testing::{
+use crate::{evm_config::GnosisEvmConfig, execute::GnosisExecutorProvider, testing::{
     models::{BlockchainTest, ForkSpec},
     Case, Error, Suite,
-};
+}};
+use alloy_chains::Chain;
 use alloy_rlp::Decodable;
 use rayon::iter::{ParallelBridge, ParallelIterator};
+use reth_chainspec::ChainSpec;
+use reth_cli::chainspec::parse_genesis;
 use reth_primitives::{BlockBody, SealedBlock, StaticFileSegment};
 use reth_provider::{
     providers::StaticFileWriter, test_utils::create_test_provider_factory_with_chain_spec,
     DatabaseProviderFactory, HashingWriter, StaticFileProviderFactory,
 };
 use reth_stages::{stages::ExecutionStage, ExecInput, Stage};
+use revm_primitives::Address;
 use std::{collections::BTreeMap, fs, path::Path, sync::Arc};
 
 /// A handler for the blockchain test suite.
@@ -129,12 +133,28 @@ impl Case for BlockchainTestCase {
                     .commit_without_sync_all()
                     .unwrap();
 
+                let s = fs::read_to_string("/Users/debjit/Drawer/gnosis/my_reth_gnosis/scripts/chiado_genesis_alloc.json").unwrap();
+                let chain_spec: ChainSpec = parse_genesis(&s).unwrap().into();
+                let chain_spec = Arc::new(chain_spec.clone());
+                let collector_address = chain_spec
+                    .genesis()
+                    .config
+                    .extra_fields
+                    .get("eip1559collector")
+                    .ok_or(Error::Custom("no eip1559collector field".to_string()))?;
+                let collector_address: Address = serde_json::from_value(collector_address.clone()).unwrap();
+                let evm_config = GnosisEvmConfig::new(
+                    collector_address,
+                    chain_spec.clone(),
+                );
+                let gnosis_executor_provider = GnosisExecutorProvider::new(chain_spec, evm_config.clone()).unwrap();
                 // Execute the execution stage using the EVM processor factory for the test case
                 // network.
-                let _ = ExecutionStage::new_with_executor(
-                    reth_evm_ethereum::execute::EthExecutorProvider::ethereum(Arc::new(
-                        case.network.clone().into(),
-                    )),
+                let result = ExecutionStage::new_with_executor(
+                    // reth_evm_ethereum::execute::EthExecutorProvider::ethereum(Arc::new(
+                    //     case.network.clone().into(),
+                    // )),
+                    gnosis_executor_provider,
                 )
                 .execute(
                     &provider,
@@ -143,6 +163,15 @@ impl Case for BlockchainTestCase {
                         checkpoint: None,
                     },
                 );
+                match result {
+                    Ok(res) => {
+                        dbg!("step 6.5 / n...result: {:?}", res);
+                    }
+                    Err(e) => {
+                        dbg!("step 6.5/n...error: {:?}", e);
+                        return Err(Error::Custom("error in execution stage".to_string()));
+                    }
+                }
 
                 // Validate the post-state for the test case.
                 match (&case.post_state, &case.post_state_hash) {

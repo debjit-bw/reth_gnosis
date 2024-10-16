@@ -30,7 +30,7 @@ BLOCK_COUNTER=0
 function make_block() {
 
   # increment block counter
-  ((BLOCK_COUNTER + 1))
+  ((BLOCK_COUNTER++))
 
   echo "Making block $BLOCK_COUNTER"
 
